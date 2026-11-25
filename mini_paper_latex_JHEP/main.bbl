@@ -1,0 +1,47 @@
+\begin{thebibliography}{7}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[{USAID}(2015)]{usaid2015}
+{USAID}.
+\newblock Supply chain management system ({SCMS}) delivery history dataset,
+  2015.
+\newblock Versi 29 September 2015, portal data terbuka USAID.
+
+\bibitem[Hitchcock(1941)]{hitchcock1941}
+Frank~L. Hitchcock.
+\newblock The distribution of a product from several sources to numerous
+  localities.
+\newblock \emph{Journal of Mathematics and Physics}, 20:\penalty0 224--230,
+  1941.
+
+\bibitem[Koopmans(1949)]{koopmans1949}
+Tjalling~C. Koopmans.
+\newblock Optimum utilization of the transportation system.
+\newblock \emph{Econometrica}, 17:\penalty0 136--146, 1949.
+
+\bibitem[Taha(2017)]{taha2017}
+Hamdy~A. Taha.
+\newblock \emph{Operations Research: An Introduction}.
+\newblock Pearson, 10 edition, 2017.
+
+\bibitem[Hillier and Lieberman(2021)]{hillier2021}
+Frederick~S. Hillier and Gerald~J. Lieberman.
+\newblock \emph{Introduction to Operations Research}.
+\newblock McGraw-Hill, 11 edition, 2021.
+
+\bibitem[Reinfeld and Vogel(1958)]{reinfeld1958}
+Nyles~V. Reinfeld and William~R. Vogel.
+\newblock \emph{Mathematical Programming}.
+\newblock Prentice-Hall, Englewood Cliffs, NJ, 1958.
+
+\bibitem[McKinney(2010)]{mckinney2010}
+Wes McKinney.
+\newblock Data structures for statistical computing in {Python}.
+\newblock In \emph{Proceedings of the 9th Python in Science Conference}, pages
+  56--61, 2010.
+
+\end{thebibliography}
