@@ -1,12 +1,12 @@
 """Peta rute pengiriman SCMS di atas OpenStreetMap (Leaflet).
 
-Dipakai dari notebook setelah NWCR/LCM/VAM dan MODI dijalankan:
+Dipakai dari notebook setelah NWC/LCM/VAM dan MODI dijalankan:
 
     from buat_peta_rute import buat_peta
     buat_peta(awal, akhir, cost_df, C, blocked, a, b, aktual, 'peta_rute_scms.html')
 
-awal  : {'NWCR': (X0, basic0), ...}
-akhir : {'NWCR': (X1, basic1, iterasi, riwayat, D), ...}   (keluaran modi())
+awal  : {'NWC': (X0, basic0), ...}
+akhir : {'NWC': (X1, basic1, iterasi, riwayat, D), ...}   (keluaran modi())
 Hasilnya satu file .html yang dibuka di browser (butuh internet untuk tile OSM dan Leaflet).
 """
 import json
