@@ -153,6 +153,7 @@ button:focus-visible,.row:focus-visible{outline:2px solid var(--accent);outline-
 .keys{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:8px}
 .keys i{display:inline-block;vertical-align:middle;margin-right:5px}
 .k-line{width:22px;border-top:3px solid var(--accent)} .k-blk{width:22px;border-top:3px dashed #d32f2f}
+.k-opt{width:22px;border-top:5px solid #0072B2} .k-non{width:22px;border-top:5px solid #F5A300}
 .k-src{width:10px;height:10px;background:#e8731a;border:1px solid #fff} .k-dst{width:10px;height:10px;border-radius:50%;background:#2a6f97;border:1px solid #fff}
 .opts{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px}
 .opts label{display:flex;align-items:center;gap:6px;cursor:pointer}
@@ -184,28 +185,27 @@ button:focus-visible,.row:focus-visible{outline:2px solid var(--accent);outline-
   <div id="body">
     <div class="lbl">Metode solusi awal</div>
     <div class="seg" id="seg-metode" role="group" aria-label="Metode">
-      <button data-m="NWCR" aria-pressed="false">NWCR</button>
-      <button data-m="LCM" aria-pressed="false">LCM</button>
-      <button data-m="VAM" aria-pressed="true">VAM</button>
-    </div>
+        </div>
     <div class="lbl">Tahap</div>
     <div class="seg" id="seg-tahap" role="group" aria-label="Tahap">
       <button data-t="awal" aria-pressed="false">Solusi awal</button>
       <button data-t="modi" aria-pressed="true">Setelah MODI</button>
     </div>
+    <div class="lbl">Warna garis</div>
+    <div class="seg" id="seg-warna" role="group" aria-label="Warna garis">
+      <button data-w="opt" aria-pressed="true">Optimal / tidak</button>
+      <button data-w="biaya" aria-pressed="false">Biaya per kg</button>
+    </div>
     <div class="lbl">Ringkasan</div>
     <dl class="stats" id="stats"></dl>
     <div id="warn"></div>
     <div id="focusbar"><span id="focustxt"></span><button id="focusclear">Tampilkan semua</button></div>
-    <div class="lbl">Biaya per kg (USD)</div>
-    <div class="bar"></div>
-    <div class="scale"><span id="cmin"></span><span id="cmax"></span></div>
-    <div class="keys">
-      <span><i class="k-line"></i>Rute valid, tebal = volume</span>
-      <span><i class="k-blk"></i>Rute terblokir (Big-M)</span>
-      <span><i class="k-src"></i>Sumber</span>
-      <span><i class="k-dst"></i>Tujuan</span>
+    <div id="costscale" style="display:none">
+      <div class="lbl">Biaya per kg (USD)</div>
+      <div class="bar"></div>
+      <div class="scale"><span id="cmin"></span><span id="cmax"></span></div>
     </div>
+    <div class="keys" id="keys"></div>
     <div class="lbl">Tampilan</div>
     <div class="opts">
       <label><input type="checkbox" id="o-anim" checked> Animasi aliran</label>
@@ -245,6 +245,32 @@ function warna(c){
   return 'rgb(' + a.map((v,k) => Math.round(v+(b[k]-v)*f)).join(',') + ')';
 }
 const lebar = kg => 1.6 + 9*Math.sqrt(kg/D.meta.maxKg);
+
+// status optimal: sebuah rute "optimal" bila selnya dipakai pada solusi akhir MODI metode yang sama
+const OPT = '#0072B2', NON = '#F5A300';
+let modeWarna = 'opt';
+const kunci = (s,t) => s + '\u0001' + t;
+const optKg = {};
+for (const m of Object.keys(D.res)) optKg[m] = new Map(D.res[m].modi.map(f => [kunci(f.s,f.t), f.kg]));
+const kgOpt = f => optKg[metode].get(kunci(f.s,f.t)) || 0;
+const diOpt = f => kgOpt(f) > 0;
+function warnaGaris(f){
+  if (f.blk) return BLK;
+  if (modeWarna === 'biaya') return warna(f.c);
+  return diOpt(f) ? OPT : NON;
+}
+function legenda(){
+  const k = document.getElementById('keys');
+  const biaya = modeWarna === 'biaya';
+  document.getElementById('costscale').style.display = biaya ? 'block' : 'none';
+  k.innerHTML = (biaya
+    ? '<span><i class="k-line"></i>Rute valid, tebal = volume</span>'
+    : '<span><i class="k-opt"></i>Optimal (sel dipakai di solusi akhir)</span>' +
+      (tahap === 'awal' ? '<span><i class="k-non"></i>Tidak optimal (dipindahkan MODI)</span>' : '')) +
+    '<span><i class="k-blk"></i>Rute terblokir (Big-M)</span>' +
+    (biaya ? '' : '<span>Tebal = volume</span>') +
+    '<span><i class="k-src"></i>Sumber</span><span><i class="k-dst"></i>Tujuan</span>';
+}
 
 // lintasan lingkaran besar; dipecah di garis tanggal internasional
 function busur(p, q, n=72){
@@ -296,17 +322,18 @@ function gambar(){
   const r = D.res[metode], flows = r[tahap];
   const anim = document.getElementById('o-anim').checked;
   // rute terkecil dulu agar yang besar berada di atas
-  [...flows].sort((a,b) => a.kg-b.kg).forEach(f => {
+  [...flows].sort((a,b) => (modeWarna==='opt' ? (diOpt(a)-diOpt(b)) : 0) || a.kg-b.kg).forEach(f => {
     const s = srcBy[f.s], d = dstBy[f.t], on = aktif(f);
     const pl = L.polyline(busur([s.lat,s.lon],[d.lat,d.lon]), {
-      color: f.blk ? BLK : warna(f.c), weight: lebar(f.kg), opacity: on ? (f.blk ? .95 : .82) : .1,
+      color: warnaGaris(f), weight: lebar(f.kg), opacity: on ? (f.blk ? .95 : .82) : .1,
       dashArray: f.blk ? '9 7' : null, lineCap:'round', className: (anim && on && !f.blk) ? 'anim' : ''});
-    pl.bindTooltip(`<b>${f.s}</b> → <b>${f.t}</b><br>${fmt(f.kg)} kg<br>USD ${fmt(f.c,2)}/kg${f.blk ? ' <b style="color:#d32f2f">(rute terblokir, biaya Big-M)</b>' : ''}<br>Biaya ${usd(f.kg*f.c)}`, {sticky:true});
+    pl.bindTooltip(`<b>${f.s}</b> → <b>${f.t}</b><br>${fmt(f.kg)} kg<br>USD ${fmt(f.c,2)}/kg${f.blk ? ' <b style="color:#d32f2f">(rute terblokir, biaya Big-M)</b>' : ''}<br>Biaya ${usd(f.kg*f.c)}` +
+      (diOpt(f) ? `<br><b style="color:${OPT}">Optimal</b>${tahap==='awal' ? ' (solusi akhir: ' + fmt(kgOpt(f)) + ' kg)' : ''}` : `<br><b style="color:#b26a00">Tidak optimal</b> (tidak dipakai di solusi akhir)`), {sticky:true});
     pl.on('mouseover', () => pl.setStyle({weight: lebar(f.kg)+2.5, opacity:1}));
     pl.on('mouseout', () => pl.setStyle({weight: lebar(f.kg), opacity: on ? (f.blk ? .95 : .82) : .1}));
     pl.addTo(layerRute); garis.push({f, pl});
   });
-  ringkas(r); daftar(flows);
+  legenda(); ringkas(r); daftar(flows);
 }
 
 function ringkas(r){
@@ -316,6 +343,7 @@ function ringkas(r){
     ['Biaya rute valid', usd(r.cost_awal_valid)],
     ['Biaya + Big-M', usd(r.cost_awal)],
     ['Sel teralokasi', fmt(D.res[metode].awal.length)],
+    ['Sel yang tetap optimal', fmt(r.awal.filter(diOpt).length) + ' dari ' + fmt(r.awal.length)],
     ['Selisih vs optimal', (r.kg_blk>0 ? 'tidak layak' : '+' + fmt((r.cost_awal_valid/r.cost_modi-1)*100, 2) + '%')],
   ] : [
     ['Biaya optimal', usd(r.cost_modi)],
@@ -366,8 +394,11 @@ function pasang(id, attr, set){
     gambar();
   }));
 }
+if (!D.res[metode]) metode = Object.keys(D.res)[0];
+document.getElementById('seg-metode').innerHTML = Object.keys(D.res).map(k => `<button data-m="${k}" aria-pressed="${k===metode}">${k}</button>`).join('');
 pasang('seg-metode', 'm', v => metode = v);
 pasang('seg-tahap', 't', v => tahap = v);
+pasang('seg-warna', 'w', v => modeWarna = v);
 document.getElementById('focusclear').addEventListener('click', () => setFokus(null));
 document.getElementById('o-anim').addEventListener('change', gambar);
 document.getElementById('o-label').addEventListener('change', e => e.target.checked ? layerLabel.addTo(map) : map.removeLayer(layerLabel));
